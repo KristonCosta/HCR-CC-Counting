@@ -1,2 +1,14 @@
 *.tif
 *.pyc
+
+.idea/HCR-CC-Counting.iml
+
+.idea/misc.xml
+
+.idea/modules.xml
+
+*.xml
+
+resources/.DS_Store
+
+src/.DS_Store

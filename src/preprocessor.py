@@ -42,7 +42,7 @@ class Preprocessor:
         print "\033[1m >>>>>>>>>> Running Preprocessor <<<<<<<<<< \033[0m"
         self.apply_median_filter()
         self.apply_otsu_filter()
-        self.apply_intensity_normalization()
+        # self.apply_intensity_normalization()
         return self.__image_stack
 
     def get_image_stack(self):
