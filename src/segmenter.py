@@ -10,7 +10,7 @@ class Segmenter:
     __processed_stack = None
     __distance_stack = None
 
-    __aggregate_cube_size = (0, 0, 0)
+    __aggregate_shape = (0, 0, 0)
 
     __debugging_dictionary = {}
     __debugging_list = []
@@ -18,13 +18,13 @@ class Segmenter:
 
     __segmenter_type = ""
 
-    def __init__(self, user_image_stack, user_aggregate_cube_size=np.ones((20, 20, 20)),
+    def __init__(self, user_image_stack, user_aggregate_shape=np.ones((20, 20, 20)),
                  user_segmenter_type="WS", distance_inverse=True, generate_debugging=False):
         self.__image_stack = user_image_stack
         if distance_inverse:
             self.__image_stack = -self.__image_stack
         self.__processed_stack = self.__image_stack
-        self.__aggregate_cube_size = user_aggregate_cube_size
+        self.__aggregate_shape = user_aggregate_shape
         self.__generate_debugging = generate_debugging
         self.__segmenter_type = user_segmenter_type
 
@@ -53,7 +53,7 @@ class Segmenter:
 
     def generate_maxi(self):
         self.__processed_stack = peak_local_max(self.__distance_stack, indices=False,
-                                                footprint=self.__aggregate_cube_size, exclude_border=False,
+                                                footprint=self.__aggregate_shape, exclude_border=False,
                                                 labels=self.__image_stack)
         self.__add_to_debug("maxi", self.__processed_stack)
         print "     Generated local maxi."

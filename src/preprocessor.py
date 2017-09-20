@@ -21,10 +21,12 @@ class Preprocessor:
         self.__window_size = user_window_size
         print "Loaded image " + str(filename)
 
-    def apply_median_filter(self):
+    def apply_median_filter(self, user_window_size = None):
+        if not user_window_size:
+            user_window_size = self.__window_size
         print "     Median filtering %d slices." % self.__z_size
         for i in range(0, self.__z_size):
-            self.__image_stack[i] = ndimage.median_filter(self.__image_stack[i, ...], self.__window_size)
+            self.__image_stack[i] = ndimage.median_filter(self.__image_stack[i, ...], user_window_size)
         print "     Finished median filtering %s slices." % self.__z_size
 
     def apply_otsu_filter(self):
@@ -35,14 +37,16 @@ class Preprocessor:
 
     def apply_intensity_normalization(self):
         for j in range(0, self.__z_size):
-            self.__image_stack[j] = exposure.equalize_adapthist(self.__image_stack[j, ...], clip_limit=2)
+            layer = self.__image_stack[j, ...]
+            self.__image_stack[j] = (layer-layer.mean())/layer.std()
         print "     Finished intensity normalization"
 
     def run_preprocessor(self):
         print "\033[1m >>>>>>>>>> Running Preprocessor <<<<<<<<<< \033[0m"
         self.apply_median_filter()
+        self.apply_intensity_normalization()
+        #self.apply_median_filter(10)
         self.apply_otsu_filter()
-        # self.apply_intensity_normalization()
         return self.__image_stack
 
     def get_image_stack(self):
