@@ -15,7 +15,7 @@ class EekCounter:
     segmenter_type = "WS"
     aggregate_shape = np.ones((20, 20, 20))
     filename = "resources/sytox_seg_test_stack_zoom_new.tif"
-    enable_debugging = False
+    enable_debugging = True
 
     def __init__(self, user_filename=None):
         if user_filename:
