@@ -13,20 +13,29 @@ class EekCounter:
 
     median_window_size = 8
     segmenter_type = "WS"
+    filter_type = "M"
     aggregate_shape = np.ones((20, 20, 20))
-    filename = "resources/sytox_seg_test_stack_zoom_new.tif"
+    arcfile = "resources/C6M1A_arc_test.tif"
+    filename = "resources/C6M1A_sytox_test.tif"
+
     enable_debugging = True
 
     def __init__(self, user_filename=None):
         if user_filename:
             self.filename = user_filename
-        self.colour_generator = ColourGenerator()
 
     def run(self):
-        self.aggregate_shape = self.create_np_ellipsoid(14,14,14)
-        preprocessor = Preprocessor(self.filename, self.median_window_size)
-        preprocessed_image_stack = preprocessor.run_preprocessor()
 
+      #  arc_preprocessor = Preprocessor(self.arcfile)
+      #  arc_preprocessor.apply_silly_filter()
+      #  arc_stack = arc_preprocessor.get_image_stack()
+      #  z_size, _, _ = arc_stack.shape
+      #  self.debug_plot(z_size, arc_stack, "Preprocessed")
+      #  return
+        self.aggregate_shape = self.create_np_ellipsoid(14, 14, 14)
+        preprocessor = Preprocessor(self.filename, self.median_window_size, self.filter_type)
+
+        preprocessed_image_stack = preprocessor.run_preprocessor()
         if self.enable_debugging:
             z_size, _, _ = preprocessed_image_stack.shape
             self.debug_plot(z_size, preprocessed_image_stack, "Preprocessed")
@@ -40,7 +49,36 @@ class EekCounter:
         colorized_image_stack = self.colorize_image_stack(segmented_image_stack)
         self.save_image_stack(colorized_image_stack)
 
-        self.generate_report(segmented_image_stack)
+        arc_preprocessor = Preprocessor(self.arcfile)
+        arc_preprocessor.apply_silly_filter()
+        arc_stack = arc_preprocessor.get_image_stack()
+        z_size, x_size, y_size = arc_stack.shape
+        arc_segment_map = {}
+        for z in range(0,z_size):
+            for x in range(0,x_size):
+                for y in range(0,y_size):
+                    if arc_stack[z][x][y] == 2:
+                        #found a cell
+                        if segmented_image_stack[z][x][y] == 0:
+                            print "Found a cell that the segmenter didn't find! Layer z: %s x: %s y: %s" %(z, x, y)
+                        else:
+                            print "Found a cell %s at z: %s x: %s y: %s" %(segmented_image_stack[z][x][y],z, x, y)
+                            key = segmented_image_stack[z][x][y]
+                            arc_segment_map[key] = 1
+        print arc_segment_map
+
+        segment_color_correct = np.zeros((z_size, x_size, y_size))
+        for z in range(0, z_size):
+            for x in range(0, x_size):
+                for y in range(0, y_size):
+                    segnum = -1
+                    if (segmented_image_stack[z][x][y] in arc_segment_map) or (segmented_image_stack[z][x][y] == 0):
+                        segment_color_correct[z][x][y] = segmented_image_stack[z][x][y]
+                    else:
+                        segment_color_correct[z][x][y] = -1
+        colorized_image_stack = self.colorize_image_stack(segment_color_correct)
+        self.save_image_stack(colorized_image_stack)
+        self.generate_report(segmented_image_stack, arc_segment_map)
 
     def generate_segment_debug(self, segmenter):
         debug_list = segmenter.get_debug_list()
@@ -49,11 +87,12 @@ class EekCounter:
             z_size, _, _= stack.shape
             self.debug_plot(z_size, stack, step)
 
-    def generate_report(self, segmented_image_stack):
+    def generate_report(self, segmented_image_stack, arc_segment_map):
         print "\033[1m >>>>>>>>>> Final Report <<<<<<<<<< \033[0m"
         cell_count = self.count_cells(segmented_image_stack)
         print ">>> Folder name: " + self.__saved_folder_name
         print ">>> Total number of unique cells found: " + str(cell_count)
+        print ">>> Total number of arc cells found: " + str(len(arc_segment_map.keys()))
 
     def colorize_image_stack(self, segmented_image_stack):
         print "\033[1m >>>>>>>>>> Colourizing Stack <<<<<<<<<< \033[0m"
@@ -106,4 +145,3 @@ class EekCounter:
 if __name__ == "__main__":
     eek_counter = EekCounter()
     eek_counter.run()
-
