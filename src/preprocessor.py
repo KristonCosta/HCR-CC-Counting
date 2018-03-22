@@ -29,14 +29,14 @@ class Preprocessor:
         kernel = np.ones((2,2), np.uint8)
         for i in range(0,z_size):
             image[i] = cv2.morphologyEx(image[i], cv2.MORPH_OPEN, kernel)
-        print "     Applied erosion."
+        print "     Applied morphological opening."
         return image
 
-    def apply_closing(self, image):
+    def apply_otsu_thresholding(self, image):
         image_filter = filters.threshold_otsu(image)
         isolated_image = image > image_filter
         image_mask = isolated_image.astype(int)
-        print "     Applied closing."
+        print "     Applied Otsu thresholding."
         return image_mask
 
     def get_image(self):
@@ -50,5 +50,5 @@ class Preprocessor:
     def preprocess_arcfile(self):
         print "\033[1m >>>>>>>>>> Preprocessing Arc Image <<<<<<<<<< \033[0m"
         image = self.apply_erosion(self.__image)
-        image = self.apply_closing(image)
+        image = self.apply_otsu_thresholding(image)
         return image 
