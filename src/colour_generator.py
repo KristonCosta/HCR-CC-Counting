@@ -20,7 +20,7 @@ class ColourGenerator:
                    [0, 100, 0, 255], [102, 205, 170, 255], [176, 224, 230, 255],
                    [123, 104, 238, 255], [218, 112, 214, 255], [255, 182, 193, 255]]
     # Dictionary lookup for segment colors, start with black for 0 (background)
-    __colour_map = {0: [0, 0, 0, 255]}
+    __colour_map = {0: [0, 0, 0, 255], -1: [200, 200, 200, 255]}
 
     def __init__(self, user_colour_list=None):
         if user_colour_list:
@@ -33,3 +33,8 @@ class ColourGenerator:
             self.__colour_map[segment_number] = self.__colour_list[self.__colour_index]
             self.__colour_index += 1
         return self.__colour_map[segment_number]
+
+    def map_id_to_color(self, id_list):
+        for i in id_list:
+            self.get_colour_for_segment(i)
+        return self.__colour_map

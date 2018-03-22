@@ -47,26 +47,30 @@ class Segmenter:
         return self.__processed_stack
 
     def calculate_distance(self):
+        print "     Generating distance transform."
         self.__distance_stack = ndimage.distance_transform_edt(self.__image_stack)
         self.__add_to_debug("distance", self.__distance_stack)
-        print "     Generated distance transform."
+        print "     >> Generated distance transform."
 
     def generate_maxi(self):
+        print "     Generating local maxi."
         self.__processed_stack = peak_local_max(self.__distance_stack, indices=False,
                                                 footprint=self.__aggregate_cube_size, exclude_border=False,
                                                 labels=self.__image_stack)
         self.__add_to_debug("maxi", self.__processed_stack)
-        print "     Generated local maxi."
+        print "     >> Generated local maxi."
 
     def generate_markers(self):
+        print "     Generating markers."
         self.__processed_stack = morphology.label(self.__processed_stack)
         self.__add_to_debug("markers", self.__processed_stack)
-        print "     Generated markers."
+        print "     >> Generated markers."
 
     def generate_watershed(self):
+        print "     Generating watershed segmentation."
         self.__processed_stack = watershed(-self.__distance_stack, self.__processed_stack, mask=self.__image_stack)
         self.__add_to_debug("watershed", self.__processed_stack)
-        print "     Generated watershed segmentation."
+        print "     >> Generated watershed segmentation."
 
     def generate_random_walk(self):
         # TODO: Put the random walk stuff here, take out exception when done

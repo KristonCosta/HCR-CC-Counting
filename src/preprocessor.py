@@ -1,49 +1,54 @@
-import skimage.io as io
 import numpy as np
-from scipy import ndimage
+import cv2
 from skimage import filters
-from skimage import exposure
-import sys
-import time
+import skimage.io as io 
 
 class Preprocessor:
 
-    __x_size = -1
-    __y_size = -1
-    __z_size = -1
+    __image = None
 
-    __image_stack = None
-    __window_size = 0
+    def __init__(self, filename):
+        self.__image = io.imread(filename)
 
-    def __init__(self, filename, user_window_size=8):
-        self.__image_stack = io.imread(filename)
-        self.__z_size, self.__x_size, self.__y_size = self.__image_stack.shape
-        self.__window_size = user_window_size
-        print "Loaded image " + str(filename)
+    def apply_adaptive_thresholding(self, image, apply_blur=True):
+        z_size, _, _ = image.shape
+        isolated_image = np.copy(image)
+        for i in range(0,z_size):
+            if apply_blur:
+                isolated_image[i] = cv2.GaussianBlur(image[i],(3,3), 2)
+            isolated_image[i] = cv2.adaptiveThreshold(isolated_image[i], 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, \
+                                cv2.THRESH_BINARY, 61, 0)
+            image[i] = image[i] * isolated_image[i]
+            image[i][image[i] > 0] = 1
+        print "     Applied adaptive thresholding."
+        return image
 
-    def apply_median_filter(self):
-        print "     Median filtering %d slices." % self.__z_size
-        for i in range(0, self.__z_size):
-            self.__image_stack[i] = ndimage.median_filter(self.__image_stack[i, ...], self.__window_size)
-        print "     Finished median filtering %s slices." % self.__z_size
+    
+    def apply_erosion(self, image):
+        z_size, _, _ = image.shape
+        kernel = np.ones((2,2), np.uint8)
+        for i in range(0,z_size):
+            image[i] = cv2.morphologyEx(image[i], cv2.MORPH_OPEN, kernel)
+        print "     Applied erosion."
+        return image
 
-    def apply_otsu_filter(self):
-        image_filter = filters.threshold_otsu(self.__image_stack)
-        isolated_image = self.__image_stack < image_filter
-        self.__image_stack = isolated_image
-        print "     Applied Otsu filter."
+    def apply_closing(self, image):
+        image_filter = filters.threshold_otsu(image)
+        isolated_image = image > image_filter
+        image_mask = isolated_image.astype(int)
+        print "     Applied closing."
+        return image_mask
 
-    def apply_intensity_normalization(self):
-        for j in range(0, self.__z_size):
-            self.__image_stack[j] = exposure.equalize_adapthist(self.__image_stack[j, ...], clip_limit=2)
-        print "     Finished intensity normalization"
+    def get_image(self):
+        return self.__image
 
-    def run_preprocessor(self):
-        print "\033[1m >>>>>>>>>> Running Preprocessor <<<<<<<<<< \033[0m"
-        self.apply_median_filter()
-        self.apply_otsu_filter()
-        # self.apply_intensity_normalization()
-        return self.__image_stack
+    def preprocess_basefile(self):
+        print "\033[1m >>>>>>>>>> Preprocessing Base Image <<<<<<<<<< \033[0m"
+        image = self.apply_adaptive_thresholding(self.__image)
+        return image
 
-    def get_image_stack(self):
-        return self.__image_stack
+    def preprocess_arcfile(self):
+        print "\033[1m >>>>>>>>>> Preprocessing Arc Image <<<<<<<<<< \033[0m"
+        image = self.apply_erosion(self.__image)
+        image = self.apply_closing(image)
+        return image 
